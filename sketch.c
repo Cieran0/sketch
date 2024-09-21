@@ -30,9 +30,19 @@ Vector2 Vector2Normalize(Vector2 v) {
     return (Vector2){ 0.0f, 0.0f };
 }
 
+int shift_down() {
+
+    if(IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) {
+        return -1;
+    }
+
+    return 1;
+}
+
 int main() {
 
-    
+    Color draw_color = {.r = 0, .g = 0, .b = 0, .a = 0xff};
+
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1920,1080,"Sketch");
     SetTargetFPS(120);
@@ -42,7 +52,7 @@ int main() {
     ClearBackground(WHITE);
     EndTextureMode();
 
-    int thickness = 20;
+    unsigned char thickness = 20;
 
     Vector2 lastMousePos = { -1, -1 };
 
@@ -54,14 +64,16 @@ int main() {
         if(IsWindowResized()) {
             screenWidth = GetScreenWidth();
             screenHeight = GetScreenHeight();
-            UnloadRenderTexture(layer_0);
+
+            RenderTexture2D before_resize = layer_0;
             layer_0 = LoadRenderTexture(screenWidth,screenHeight);
-            
+
             BeginTextureMode(layer_0);
             ClearBackground(WHITE);
+            DrawTextureRec(before_resize.texture, (Rectangle) { 0, 0, (float)before_resize.texture.width, (float)-before_resize.texture.height }, (Vector2) { 0, 0 }, WHITE);
             EndTextureMode();
 
-            printf("Screen width: %i, Screen height: %i",screenWidth, screenHeight);
+            UnloadRenderTexture(before_resize);
         }
 
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
@@ -77,17 +89,39 @@ int main() {
 
                 for (float i = 0; i < distance; i += 1.0f) {
                     Vector2 intermediatePos = Vector2Add(lastMousePos, Vector2Scale(normDirection, i));
-                    DrawCircleV(intermediatePos, thickness, BLACK);
+                    DrawCircleV(intermediatePos, thickness, draw_color);
                 }
             }
-            DrawCircleV(mousePos, thickness, BLACK);
+            DrawCircleV(mousePos, thickness, draw_color);
             EndTextureMode();
             lastMousePos = mousePos;
         } else {
             lastMousePos = (Vector2){ -1, -1};
         }
 
-        thickness += GetMouseWheelMove()*2;
+        if(IsKeyPressed(KEY_C)) {
+            BeginTextureMode(layer_0);
+            ClearBackground(WHITE);
+            EndTextureMode();
+        }
+
+
+        if(IsKeyDown(KEY_R)) {
+            draw_color.r += shift_down();
+        }
+        if(IsKeyDown(KEY_G)) {
+            draw_color.g += shift_down();
+        }
+        if(IsKeyDown(KEY_B)) {
+            draw_color.b += shift_down();
+        }
+
+
+        float movement = GetMouseWheelMove();
+
+        thickness += (int)(movement*2);
+
+
         if(thickness < MIN_THICKNESS) {
             thickness = MIN_THICKNESS;
         } else if (thickness >= MAX_THICKNESS) {
